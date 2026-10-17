@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/alexandrmotologa/tlslens/internal/handshake"
+	"github.com/alexandrmotologa/tlslens/internal/linter"
 )
 
 // ParseCertSummary extracts structured metadata and extensions from an x509.Certificate.
@@ -34,6 +35,7 @@ func ParseCertSummary(cert *x509.Certificate) handshake.CertSummary {
 	}
 
 	keyType, keyLen := getKeyInfo(cert.PublicKey)
+	lintRes := linter.LintCertificate(cert)
 
 	return handshake.CertSummary{
 		CommonName:         cert.Subject.CommonName,
@@ -56,6 +58,7 @@ func ParseCertSummary(cert *x509.Certificate) handshake.CertSummary {
 		ExtKeyUsage:        FormatExtKeyUsage(cert.ExtKeyUsage),
 		OCSPServers:        cert.OCSPServer,
 		CRLDistribution:    cert.CRLDistributionPoints,
+		Lint:               &lintRes,
 	}
 }
 

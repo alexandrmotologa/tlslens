@@ -5,14 +5,18 @@ import (
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
 	"fmt"
 	"net"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/alexandrmotologa/tlslens/internal/linter"
 )
 
 // ProbeOptions configures the probe parameters.
@@ -284,6 +288,15 @@ func parseSummaryDirect(cert *x509.Certificate) CertSummary {
 	}
 
 	keyType, keyLen := getKeyInfo(cert.PublicKey)
+	lintRes := linter.LintCertificate(cert)
+
+	sha256Sum := sha256.Sum256(cert.Raw)
+	rawHex := strings.ToUpper(hex.EncodeToString(sha256Sum[:]))
+	var fpParts []string
+	for i := 0; i < len(rawHex); i += 2 {
+		fpParts = append(fpParts, rawHex[i:i+2])
+	}
+	fpFormatted := strings.Join(fpParts, ":")
 
 	return CertSummary{
 		CommonName:         cert.Subject.CommonName,
@@ -300,9 +313,11 @@ func parseSummaryDirect(cert *x509.Certificate) CertSummary {
 		KeyType:            keyType,
 		KeyLength:          keyLen,
 		SignatureAlgorithm: cert.SignatureAlgorithm.String(),
+		FingerprintSHA256:  fpFormatted,
 		IsCA:               cert.IsCA,
 		OCSPServers:        cert.OCSPServer,
 		CRLDistribution:    cert.CRLDistributionPoints,
+		Lint:               &lintRes,
 	}
 }
 

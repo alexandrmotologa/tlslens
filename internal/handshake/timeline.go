@@ -2,6 +2,8 @@ package handshake
 
 import (
 	"time"
+
+	"github.com/alexandrmotologa/tlslens/internal/linter"
 )
 
 // TimingStage represents a distinct phase of the network & TLS handshake.
@@ -15,26 +17,27 @@ type TimingStage struct {
 
 // CertSummary captures certificate details for the visual chain.
 type CertSummary struct {
-	CommonName         string    `json:"commonName"`
-	Subject            string    `json:"subject"`
-	Issuer             string    `json:"issuer"`
-	SerialNumber       string    `json:"serialNumber"`
-	NotBefore          time.Time `json:"notBefore"`
-	NotAfter           time.Time `json:"notAfter"`
-	DaysRemaining      int       `json:"daysRemaining"`
-	IsExpired          bool      `json:"isExpired"`
-	ExpiresSoon        bool      `json:"expiresSoon"`
-	DNSNames           []string  `json:"dnsNames"`
-	IPAddresses        []string  `json:"ipAddresses"`
-	KeyType            string    `json:"keyType"`
-	KeyLength          int       `json:"keyLength"`
-	SignatureAlgorithm string    `json:"signatureAlgorithm"`
-	FingerprintSHA256  string    `json:"fingerprintSHA256"`
-	IsCA               bool      `json:"isCA"`
-	KeyUsage           []string  `json:"keyUsage"`
-	ExtKeyUsage        []string  `json:"extKeyUsage"`
-	OCSPServers        []string  `json:"ocspServers"`
-	CRLDistribution    []string  `json:"crlDistribution"`
+	CommonName         string             `json:"commonName"`
+	Subject            string             `json:"subject"`
+	Issuer             string             `json:"issuer"`
+	SerialNumber       string             `json:"serialNumber"`
+	NotBefore          time.Time          `json:"notBefore"`
+	NotAfter           time.Time          `json:"notAfter"`
+	DaysRemaining      int                `json:"daysRemaining"`
+	IsExpired          bool               `json:"isExpired"`
+	ExpiresSoon        bool               `json:"expiresSoon"`
+	DNSNames           []string           `json:"dnsNames"`
+	IPAddresses        []string           `json:"ipAddresses"`
+	KeyType            string             `json:"keyType"`
+	KeyLength          int                `json:"keyLength"`
+	SignatureAlgorithm string             `json:"signatureAlgorithm"`
+	FingerprintSHA256  string             `json:"fingerprintSHA256"`
+	IsCA               bool               `json:"isCA"`
+	KeyUsage           []string           `json:"keyUsage"`
+	ExtKeyUsage        []string           `json:"extKeyUsage"`
+	OCSPServers        []string           `json:"ocspServers"`
+	CRLDistribution    []string           `json:"crlDistribution"`
+	Lint               *linter.LintResult `json:"lint,omitempty"`
 }
 
 // ProbeResult aggregates all timing, protocol, and certificate metrics.

@@ -22,7 +22,9 @@ import {
   fetchMTLSStatus, 
   startMTLSServer, 
   stopMTLSServer, 
-  testMTLSClient 
+  testMTLSClient,
+  simulateMTLSAlert,
+  SimulationProbeResult
 } from '../lib/api';
 
 interface MtlsPlaygroundProps {
@@ -44,6 +46,11 @@ export const MtlsPlayground: React.FC<MtlsPlaygroundProps> = ({ caCertPEM }) => 
   const [testScenario, setTestScenario] = useState<'valid' | 'nocert' | 'custom'>('nocert');
   const [clientLoading, setClientLoading] = useState(false);
   const [testResult, setTestResult] = useState<ClientTestResult | null>(null);
+
+  // Alert simulation state
+  const [simAlertCode, setSimAlertCode] = useState<number>(48);
+  const [simLoading, setSimLoading] = useState<boolean>(false);
+  const [simResult, setSimResult] = useState<SimulationProbeResult | null>(null);
 
   const loadStatus = async () => {
     try {
@@ -442,6 +449,98 @@ export const MtlsPlayground: React.FC<MtlsPlaygroundProps> = ({ caCertPEM }) => 
             </div>
           )}
         </div>
+      </div>
+
+      {/* Interactive TLS Alert Simulator Studio */}
+      <div className="p-5 rounded-xl bg-[#0c1222] border border-[#1e293b] shadow-sm space-y-4">
+        <div>
+          <h3 className="text-base font-semibold text-white flex items-center space-x-2">
+            <ShieldAlert className="w-5 h-5 text-amber-400" />
+            <span>Interactive TLS Alert &amp; Failure Simulator</span>
+          </h3>
+          <p className="text-xs text-slate-400 mt-1">
+            Force standard RFC fatal alert records to test how client applications, microservices, and retry loops handle specific TLS alerts.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="sm:col-span-2">
+            <label className="block text-[11px] font-mono text-slate-400 uppercase tracking-wider mb-1">
+              Select Fatal TLS Alert Code
+            </label>
+            <select
+              value={simAlertCode}
+              onChange={(e) => setSimAlertCode(Number(e.target.value))}
+              className="w-full bg-[#11192e] border border-slate-700/80 rounded-lg px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-blue-500"
+            >
+              <option value={40}>Alert 40: Handshake Failure (handshake_failure)</option>
+              <option value={41}>Alert 41: No Certificate (no_certificate)</option>
+              <option value={42}>Alert 42: Bad Certificate (bad_certificate)</option>
+              <option value={45}>Alert 45: Certificate Expired (certificate_expired)</option>
+              <option value={46}>Alert 46: Certificate Unknown (certificate_unknown)</option>
+              <option value={48}>Alert 48: Unknown CA / Authority (unknown_ca)</option>
+              <option value={112}>Alert 112: Unrecognized Name / SNI Mismatch (unrecognized_name)</option>
+              <option value={116}>Alert 116: Certificate Required (certificate_required)</option>
+            </select>
+          </div>
+
+          <div className="flex items-end">
+            <button
+              onClick={async () => {
+                setSimLoading(true);
+                try {
+                  const res = await simulateMTLSAlert(simAlertCode);
+                  setSimResult(res);
+                } catch (err) {
+                  console.error(err);
+                } finally {
+                  setSimLoading(false);
+                }
+              }}
+              disabled={simLoading}
+              className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white rounded-lg text-xs font-mono font-medium transition shadow-md shadow-amber-600/20"
+            >
+              {simLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+              <span>{simLoading ? 'Simulating Alert...' : 'Simulate & Probe Alert'}</span>
+            </button>
+          </div>
+        </div>
+
+        {simResult && (
+          <div className="p-4 rounded-lg bg-[#11192e] border border-amber-800/40 space-y-3 font-mono text-xs">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <span className="text-amber-400 font-bold">
+                SIMULATED ALERT {simResult.alertCode}: {simResult.alertName.toUpperCase()}
+              </span>
+              <span className="text-[11px] text-slate-400">
+                Raw Frame: <code className="text-blue-300 font-mono bg-black/40 px-1.5 py-0.5 rounded">{simResult.rawHex}</code>
+              </span>
+            </div>
+
+            <div>
+              <span className="text-[11px] text-slate-500 block mb-0.5">CLIENT-SIDE ERROR STRING</span>
+              <p className="text-rose-300 bg-rose-950/40 p-2 rounded border border-rose-900/50 break-all">
+                {simResult.clientError || 'Handshake terminated by remote alert'}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-[11px] text-slate-500 block mb-0.5">ROOT CAUSE SUMMARY</span>
+              <p className="text-slate-200">{simResult.diagnostics.summary}</p>
+            </div>
+
+            {simResult.diagnostics.remediationSteps && simResult.diagnostics.remediationSteps.length > 0 && (
+              <div className="space-y-1">
+                <span className="text-[11px] text-slate-500 block">REMEDIATION GUIDANCE</span>
+                <ul className="list-disc pl-4 space-y-0.5 text-slate-300 text-[11px]">
+                  {simResult.diagnostics.remediationSteps.map((step, idx) => (
+                    <li key={idx}>{step}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

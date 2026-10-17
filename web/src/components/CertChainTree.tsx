@@ -366,6 +366,67 @@ export const CertChainTree: React.FC = () => {
                   </div>
                 </div>
 
+                {/* CAB Forum & RFC 5280 Compliance Linter Section */}
+                {selectedNode.lint && (
+                  <div className="bg-[#11192e] p-3.5 rounded-lg border border-[#1e293b]/80 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-[11px] font-mono font-bold text-slate-300 uppercase tracking-wider">
+                          CAB Forum &amp; RFC 5280 Compliance
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                            selectedNode.lint.status === 'pass'
+                              ? 'bg-emerald-950/70 text-emerald-300 border-emerald-800/50'
+                              : selectedNode.lint.status === 'warning'
+                              ? 'bg-amber-950/70 text-amber-300 border-amber-800/50'
+                              : 'bg-rose-950/70 text-rose-300 border-rose-800/50'
+                          }`}
+                        >
+                          {selectedNode.lint.status}
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-mono text-slate-400">
+                        {selectedNode.lint.findings.length} findings
+                      </span>
+                    </div>
+
+                    {selectedNode.lint.findings.length === 0 ? (
+                      <p className="text-xs text-emerald-400 font-mono flex items-center space-x-1.5">
+                        <ShieldCheck className="w-4 h-4 shrink-0" />
+                        <span>All CAB Forum Baseline Requirements and RFC 5280 constraints satisfied.</span>
+                      </p>
+                    ) : (
+                      <div className="space-y-2 pt-1">
+                        {selectedNode.lint.findings.map((f, i) => (
+                          <div
+                            key={i}
+                            className={`p-2.5 rounded border text-xs font-mono space-y-1 ${
+                              f.severity === 'error'
+                                ? 'bg-rose-950/30 border-rose-800/40 text-rose-200'
+                                : f.severity === 'warning'
+                                ? 'bg-amber-950/30 border-amber-800/40 text-amber-200'
+                                : 'bg-blue-950/30 border-blue-800/40 text-blue-200'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold flex items-center space-x-1">
+                                <span>{f.title}</span>
+                              </span>
+                              <span className="text-[10px] opacity-75 uppercase">{f.standard}</span>
+                            </div>
+                            <p className="text-[11px] opacity-90 leading-relaxed">{f.message}</p>
+                            <div className="text-[11px] text-slate-300 pt-1 border-t border-white/10 flex items-start space-x-1">
+                              <span className="text-emerald-400 shrink-0">Fix:</span>
+                              <span>{f.remediation}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Fingerprint block */}
                 <div className="bg-[#11192e] p-3 rounded-lg border border-[#1e293b]/60">
                   <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono mb-1">

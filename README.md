@@ -15,20 +15,23 @@
   <img src="docs/images/tlslens_demo.gif" alt="TLSLens Handshake Profiler and PKI Studio Demo" width="90%" />
 </p>
 
-TLSLens is a developer diagnostics tool and PKI workbench for debugging TLS configurations, mutual TLS (mTLS) authentication failures, and certificate chains. It generates trusted local root CAs with 1 click, registers them in the operating system root store (Windows, macOS, Linux), troubleshoots mTLS connection alerts, and visualizes sub-millisecond TLS 1.3 and 1.2 handshake timelines.
+TLSLens is a developer diagnostics tool and PKI workbench for debugging TLS configurations, mutual TLS (mTLS) authentication failures, and certificate chains. It generates trusted local root CAs with 1 click, registers them in the operating system root store (Windows, macOS, Linux), troubleshoots mTLS connection alerts, simulates client compatibility matrices, audits CAB Forum compliance rules, and visualizes sub-millisecond TLS 1.3 and 1.2 handshake timelines.
 
 ---
 
 ## Capabilities
 
 - **Zero-Config Local CA**: Generates ECDSA P-256 and RSA root CAs with automatic registration in Windows CertStore, macOS Keychain, and Linux ca-certificates.
-- **Wildcard Certificate Issuer**: Issues valid SAN certificates (`*.local.test`, `localhost`, `127.0.0.1`) with configurable validity and key algorithms.
-- **Interactive mTLS Playground**: Runs an in-memory mTLS server with configurable client authentication policies (`RequireAndVerifyClientCert`, `VerifyClientCertIfGiven`, etc.) and a client test probe.
-- **Handshake Alert Diagnostics**: Detects and translates raw TLS alert codes (alert 40 `handshake_failure`, alert 42 `bad_certificate`, alert 45 `certificate_expired`, alert 46 `certificate_unknown`, alert 48 `unknown_ca`) into concrete remediation steps.
+- **Embedded RFC 8555 ACME Server**: Provides a local ACME directory (`/acme/directory`) for automated issuance to Caddy, Traefik, Certbot, and Kubernetes cert-manager without external rate limits.
+- **Side-by-Side TLS & Certificate Diff**: Runs concurrent dual-host handshakes to highlight differences in ciphers, SANs, chain depth, and stage latencies.
+- **X.509 Compliance & CAB Forum Linter**: Evaluates certificates against CAB Forum Baseline Requirements and RFC 5280 constraints, flagging key sizes, SAN deprecation, and lifespan limits.
+- **Client Compatibility Matrix Scanner**: Probes targets against real-world client configurations (Android, iOS, Chrome, Firefox, Java, OpenSSL) to evaluate protocol negotiation.
+- **Interactive mTLS Playground & Alert Simulator**: Runs an in-memory mTLS server with configurable client authentication policies and simulates fatal TLS alerts (40, 42, 45, 46, 48, 112, 116).
+- **Handshake Alert Diagnostics**: Detects and translates raw TLS alert codes into concrete remediation steps.
 - **TLS Handshake Waterfall Profiler**: Measures sub-millisecond breakdowns across DNS resolution, TCP SYN/ACK, ClientHello, ServerHello, Certificate Validation, and Key Exchange.
-- **X.509 Visual Hierarchy Inspector**: Interactive tree showing Leaf -> Intermediate -> Root relationships with validity countdowns, SAN badges, key usage flags, and fingerprints.
-- **Security & Cipher Suite Auditor**: Grades target endpoints (A+ to F) evaluating forward secrecy (PFS), cipher algorithms, key sizes, and protocol versions.
-- **Configuration Studio**: Generates validated configuration snippets for Nginx, Caddy, Envoy, Apache, Docker, cURL, Go, Node.js, and Python.
+- **Continuous Domain Watcher**: Tracks expiration dates and certificate fingerprints in the background, broadcasting WebSocket alerts before expiration.
+- **Kubernetes Native Export Studio**: Generates kubernetes.io/tls Secrets, CA ConfigMaps, cert-manager ClusterIssuers, and Ingress TLS definitions.
+- **Reverse Proxy & Client Configs**: Generates validated configuration snippets for Nginx, Caddy, Envoy, Apache, Docker, cURL, Go, Node.js, and Python.
 
 ---
 
@@ -38,10 +41,14 @@ TLSLens is a developer diagnostics tool and PKI workbench for debugging TLS conf
 |---|---|
 | **CA Studio** | Generate local Root CA, install or remove from OS trust store, issue leaf certificates, and export PEM/PKCS#12 bundles |
 | **Handshake Waterfall** | Measure sub-millisecond latency for TCP Connect, TLS ClientHello, ServerHello, Certificate Validation, and Key Exchange |
-| **Certificate Chain** | Visual hierarchy displaying Subject, Issuer, Expiration countdown, Key Usage extensions, and OCSP status |
-| **mTLS Sandbox** | Test bidirectional client certificate verification, inspect client credentials, and decode TLS alert codes |
+| **Certificate Chain & Linter** | Visual hierarchy displaying Subject, Issuer, Expiration countdown, Key Usage extensions, and CAB Forum compliance checks |
+| **Side-by-Side Diff** | Concurrent comparative analysis between two targets or staging vs production environments |
+| **Client Matrix** | Compatibility matrix testing Android, iOS, Chrome, Java, and OpenSSL client profiles |
+| **mTLS & Alert Simulator** | Test bidirectional client certificate verification and trigger fatal TLS alert frames |
 | **Security Audit** | Security grading (A+ to F), protocol compatibility matrix, and cipher suite evaluation |
-| **Config Generator** | Export reverse proxy configurations and local runtime environment variables |
+| **Configs & Kubernetes** | Export reverse proxy configs, runtime environment variables, and kubernetes.io/tls manifests |
+| **Domain Watcher** | Continuous background monitoring with certificate expiry countdowns and alerts |
+| **ACME Server** | Local RFC 8555 directory with automated orders log and integration templates |
 
 <p align="center">
   <img src="docs/images/tlslens-1.png" alt="TLSLens Handshake Profiler" width="48%" />
@@ -59,7 +66,7 @@ TLSLens is a developer diagnostics tool and PKI workbench for debugging TLS conf
 
 ### Installation
 
-Download the pre-compiled binary for your operating system or compile from source:
+Compile directly from source with Go 1.23+:
 
 ```bash
 # Clone the repository
@@ -67,7 +74,7 @@ git clone https://github.com/alexandrmotologa/tlslens.git
 cd tlslens
 
 # Build the embedded single binary
-go build -o bin/tlslens ./cmd/tlslens
+go build -o tlslens.exe ./cmd/tlslens
 ```
 
 ### Starting the Studio
@@ -75,7 +82,7 @@ go build -o bin/tlslens ./cmd/tlslens
 Run the integrated web studio and API server:
 
 ```bash
-./bin/tlslens serve --port 8080
+tlslens serve --port 8080
 ```
 
 Open `http://localhost:8080` in your browser.
@@ -122,7 +129,7 @@ This creates:
 - `./certs/bundle.pem`: Combined leaf and root CA chain
 - `./certs/cert.p12`: PKCS#12 archive for browser or system import
 
-### Inspect a Remote or Local TLS Endpoint
+### Inspect a TLS Endpoint
 
 ```bash
 # Run handshake probe and chain inspection
@@ -132,11 +139,47 @@ tlslens inspect google.com:443
 tlslens inspect localhost:9443 --json
 ```
 
+### Compare Two Endpoints Side-by-Side
+
+```bash
+# Compare staging and production configurations
+tlslens diff staging.example.com:443 prod.example.com:443
+```
+
+### Scan Client Compatibility Matrix
+
+```bash
+# Test target against real-world client profiles
+tlslens matrix google.com:443
+```
+
+### Audit Certificate Compliance (CAB Forum & RFC 5280)
+
+```bash
+# Lint certificate from remote host or local file
+tlslens lint google.com:443
+tlslens lint ./certs/cert.pem
+```
+
 ### Test Mutual TLS (mTLS)
 
 ```bash
 # Test client authentication against an mTLS server
 tlslens mtls test --target localhost:9443 --ca ./certs/root-ca.crt --cert ./certs/client.crt --key ./certs/client.key
+```
+
+### Generate Kubernetes Manifests
+
+```bash
+# Generate Secret, ConfigMap, cert-manager Issuer, and Ingress YAML
+tlslens k8s --name auth-svc --namespace staging --domains "auth.local,api.auth.local"
+```
+
+### Continuous Domain Watcher
+
+```bash
+# Monitor certificate expiration status
+tlslens watch google.com:443 --interval 300
 ```
 
 ### Run Security Audit

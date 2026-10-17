@@ -183,6 +183,88 @@ func (ca *CA) Issue(req IssueRequest) (*IssuedCertificate, error) {
 	}, nil
 }
 
+// IssueFromCSR signs a client-provided PKCS#10 Certificate Request (CSR) with the CA.
+func (ca *CA) IssueFromCSR(csrDER []byte, validityDays int) (*IssuedCertificate, error) {
+	if ca == nil || ca.Certificate == nil || ca.PrivateKey == nil {
+		return nil, errors.New("ca is not initialized")
+	}
+
+	csr, err := x509.ParseCertificateRequest(csrDER)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse CSR: %w", err)
+	}
+
+	if err := csr.CheckSignature(); err != nil {
+		return nil, fmt.Errorf("invalid CSR signature: %w", err)
+	}
+
+	if validityDays <= 0 {
+		validityDays = 90
+	}
+
+	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate serial number: %w", err)
+	}
+
+	now := time.Now().UTC()
+	cn := csr.Subject.CommonName
+	if cn == "" && len(csr.DNSNames) > 0 {
+		cn = csr.DNSNames[0]
+	}
+
+	var ipStrings []string
+	for _, ip := range csr.IPAddresses {
+		ipStrings = append(ipStrings, ip.String())
+	}
+
+	template := x509.Certificate{
+		SerialNumber:          serialNumber,
+		Subject:               csr.Subject,
+		NotBefore:             now.Add(-10 * time.Minute),
+		NotAfter:              now.AddDate(0, 0, validityDays),
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
+		BasicConstraintsValid: true,
+		IsCA:                  false,
+		DNSNames:              csr.DNSNames,
+		IPAddresses:           csr.IPAddresses,
+		EmailAddresses:        csr.EmailAddresses,
+		AuthorityKeyId:        ca.Certificate.SubjectKeyId,
+	}
+
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, ca.Certificate, csr.PublicKey, ca.PrivateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign CSR: %w", err)
+	}
+
+	cert, err := x509.ParseCertificate(derBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse generated certificate: %w", err)
+	}
+
+	certPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: derBytes,
+	})
+
+	bundlePEM := append(certPEM, ca.CertPEM...)
+	sha256Sum := sha256.Sum256(derBytes)
+
+	return &IssuedCertificate{
+		CertPEM:           certPEM,
+		BundlePEM:         bundlePEM,
+		CommonName:        cn,
+		DNSNames:          csr.DNSNames,
+		IPAddresses:       ipStrings,
+		SerialNumber:      cert.SerialNumber.Text(16),
+		NotBefore:         cert.NotBefore,
+		NotAfter:          cert.NotAfter,
+		FingerprintSHA256: formatFingerprint(hex.EncodeToString(sha256Sum[:])),
+		Certificate:       cert,
+	}, nil
+}
+
 // SaveToDir saves cert.pem, key.pem, bundle.pem, and optionally cert.p12 into directory.
 func (ic *IssuedCertificate) SaveToDir(outDir string) error {
 	if err := os.MkdirAll(outDir, 0755); err != nil {

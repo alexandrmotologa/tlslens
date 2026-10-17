@@ -234,6 +234,26 @@ func extractAlertCode(errStr string) int {
 		return code
 	}
 
+	lower := strings.ToLower(errStr)
+	switch {
+	case strings.Contains(lower, "handshake failure"):
+		return 40
+	case strings.Contains(lower, "no certificate"):
+		return 41
+	case strings.Contains(lower, "bad certificate"):
+		return 42
+	case strings.Contains(lower, "expired certificate") || strings.Contains(lower, "certificate expired"):
+		return 45
+	case strings.Contains(lower, "unknown certificate authority") || strings.Contains(lower, "unknown authority") || strings.Contains(lower, "unknown ca"):
+		return 48
+	case strings.Contains(lower, "unknown certificate") || strings.Contains(lower, "certificate unknown"):
+		return 46
+	case strings.Contains(lower, "unrecognized name"):
+		return 112
+	case strings.Contains(lower, "certificate required"):
+		return 116
+	}
+
 	return 0
 }
 

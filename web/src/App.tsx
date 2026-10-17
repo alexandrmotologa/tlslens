@@ -6,8 +6,12 @@ import { CertChainTree } from './components/CertChainTree';
 import { MtlsPlayground } from './components/MtlsPlayground';
 import { SecurityAudit } from './components/SecurityAudit';
 import { ConfigGenerator } from './components/ConfigGenerator';
+import { TlsDiff } from './components/TlsDiff';
+import { ClientMatrix } from './components/ClientMatrix';
+import { DomainWatcher } from './components/DomainWatcher';
+import { AcmeStudio } from './components/AcmeStudio';
 import { CACredentialsInfo, connectWebSocket, fetchCAStatus } from './lib/api';
-import { ShieldCheck, Info } from 'lucide-react';
+import { ShieldCheck, Info, Bell } from 'lucide-react';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('ca');
@@ -39,6 +43,10 @@ export function App() {
         const payload = msg.payload;
         setLiveBanner(`mTLS event: ${payload.success ? 'Accepted' : 'Rejected'} from ${payload.remoteAddr}`);
         setTimeout(() => setLiveBanner(null), 4000);
+      } else if (msg.type === 'watcher_alert') {
+        const payload = msg.payload;
+        setLiveBanner(`Domain Alert: ${payload.domain?.target} status changed to ${payload.domain?.status}`);
+        setTimeout(() => setLiveBanner(null), 5000);
       }
     });
 
@@ -85,6 +93,14 @@ export function App() {
           <CertChainTree />
         )}
 
+        {activeTab === 'diff' && (
+          <TlsDiff />
+        )}
+
+        {activeTab === 'matrix' && (
+          <ClientMatrix />
+        )}
+
         {activeTab === 'mtls' && (
           <MtlsPlayground caCertPEM={caInfo?.certPath ? undefined : undefined} />
         )}
@@ -95,6 +111,14 @@ export function App() {
 
         {activeTab === 'configs' && (
           <ConfigGenerator />
+        )}
+
+        {activeTab === 'watcher' && (
+          <DomainWatcher />
+        )}
+
+        {activeTab === 'acme' && (
+          <AcmeStudio />
         )}
       </main>
 

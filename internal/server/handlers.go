@@ -11,9 +11,14 @@ import (
 	"github.com/alexandrmotologa/tlslens/internal/audit"
 	"github.com/alexandrmotologa/tlslens/internal/ca"
 	"github.com/alexandrmotologa/tlslens/internal/configs"
+	"github.com/alexandrmotologa/tlslens/internal/diff"
 	"github.com/alexandrmotologa/tlslens/internal/handshake"
 	"github.com/alexandrmotologa/tlslens/internal/inspector"
+	"github.com/alexandrmotologa/tlslens/internal/k8s"
+	"github.com/alexandrmotologa/tlslens/internal/linter"
+	"github.com/alexandrmotologa/tlslens/internal/matrix"
 	"github.com/alexandrmotologa/tlslens/internal/mtls"
+	"strings"
 )
 
 type jsonMap map[string]any
@@ -504,3 +509,237 @@ func (s *Server) jsonError(w http.ResponseWriter, status int, msg string) {
 		"success": false,
 	})
 }
+
+// ---------------- Expanded Handlers ----------------
+
+type diffRequest struct {
+	TargetA string `json:"targetA"`
+	TargetB string `json:"targetB"`
+}
+
+func (s *Server) handleDiff(w http.ResponseWriter, r *http.Request) {
+	var req diffRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.jsonError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	if req.TargetA == "" || req.TargetB == "" {
+		s.jsonError(w, http.StatusBadRequest, "Both targetA and targetB are required")
+		return
+	}
+
+	s.mu.RLock()
+	var rootPool *x509.CertPool
+	if s.caInstance != nil {
+		rootPool = x509.NewCertPool()
+		rootPool.AddCert(s.caInstance.Certificate)
+	}
+	s.mu.RUnlock()
+
+	res, err := diff.CompareTargets(r.Context(), req.TargetA, req.TargetB, rootPool)
+	if err != nil {
+		s.jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	s.jsonResponse(w, http.StatusOK, res)
+}
+
+type matrixRequest struct {
+	Target string `json:"target"`
+}
+
+func (s *Server) handleMatrix(w http.ResponseWriter, r *http.Request) {
+	var req matrixRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.jsonError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	if req.Target == "" {
+		s.jsonError(w, http.StatusBadRequest, "Target is required")
+		return
+	}
+
+	s.mu.RLock()
+	var rootPool *x509.CertPool
+	if s.caInstance != nil {
+		rootPool = x509.NewCertPool()
+		rootPool.AddCert(s.caInstance.Certificate)
+	}
+	s.mu.RUnlock()
+
+	res, err := matrix.ScanMatrix(r.Context(), req.Target, rootPool)
+	if err != nil {
+		s.jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	s.jsonResponse(w, http.StatusOK, res)
+}
+
+type lintRequest struct {
+	Target  string `json:"target"`
+	PEMData string `json:"pemData"`
+}
+
+func (s *Server) handleLinter(w http.ResponseWriter, r *http.Request) {
+	var req lintRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.jsonError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	var certToLint *x509.Certificate
+
+	if strings.TrimSpace(req.PEMData) != "" {
+		certs, err := inspector.ParseCertificatesFromPEM([]byte(req.PEMData))
+		if err != nil || len(certs) == 0 {
+			s.jsonError(w, http.StatusBadRequest, "Failed to parse PEM certificate")
+			return
+		}
+		certToLint = certs[0]
+	} else if strings.TrimSpace(req.Target) != "" {
+		opts := handshake.ProbeOptions{InsecureSkipVerify: true}
+		res, err := handshake.ProbeEndpoint(r.Context(), req.Target, opts)
+		if err != nil || res == nil || len(res.PeerCertificates) == 0 {
+			s.jsonError(w, http.StatusInternalServerError, "Failed to probe target certificate")
+			return
+		}
+		if res.PeerCertificates[0].Lint != nil {
+			s.jsonResponse(w, http.StatusOK, res.PeerCertificates[0].Lint)
+			return
+		}
+	} else {
+		s.jsonError(w, http.StatusBadRequest, "Either target or pemData is required")
+		return
+	}
+
+	if certToLint != nil {
+		lintRes := linter.LintCertificate(certToLint)
+		s.jsonResponse(w, http.StatusOK, lintRes)
+		return
+	}
+
+	s.jsonError(w, http.StatusBadRequest, "No certificate found to lint")
+}
+
+type k8sGenRequest struct {
+	Name        string   `json:"name"`
+	Namespace   string   `json:"namespace"`
+	CertPEM     string   `json:"certPem"`
+	KeyPEM      string   `json:"keyPem"`
+	CAPEM       string   `json:"caPem"`
+	Domains     []string `json:"domains"`
+	ServiceName string   `json:"serviceName"`
+	ServicePort int      `json:"servicePort"`
+}
+
+func (s *Server) handleK8sGenerate(w http.ResponseWriter, r *http.Request) {
+	var req k8sGenRequest
+	_ = json.NewDecoder(r.Body).Decode(&req)
+
+	s.mu.RLock()
+	caInst := s.caInstance
+	s.mu.RUnlock()
+
+	opts := k8s.ManifestOptions{
+		Name:        req.Name,
+		Namespace:   req.Namespace,
+		CertPEM:     []byte(req.CertPEM),
+		KeyPEM:      []byte(req.KeyPEM),
+		CAPEM:       []byte(req.CAPEM),
+		Domains:     req.Domains,
+		ServiceName: req.ServiceName,
+		ServicePort: req.ServicePort,
+	}
+
+	if len(opts.CAPEM) == 0 && caInst != nil {
+		opts.CAPEM = caInst.CertPEM
+	}
+
+	bundle := k8s.GenerateManifests(opts)
+	s.jsonResponse(w, http.StatusOK, bundle)
+}
+
+type alertSimulateRequest struct {
+	AlertCode int `json:"alertCode"`
+}
+
+func (s *Server) handleMTLSSimulate(w http.ResponseWriter, r *http.Request) {
+	var req alertSimulateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.jsonError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	res, err := mtls.TestAlertSimulation(r.Context(), req.AlertCode)
+	if err != nil {
+		s.jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	s.jsonResponse(w, http.StatusOK, res)
+}
+
+type addWatchRequest struct {
+	Target          string `json:"target"`
+	IntervalSeconds int    `json:"intervalSeconds"`
+}
+
+func (s *Server) handleWatcher(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		items := s.domainWatcher.List()
+		s.jsonResponse(w, http.StatusOK, items)
+	case http.MethodPost:
+		var req addWatchRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			s.jsonError(w, http.StatusBadRequest, "Invalid request payload")
+			return
+		}
+		item, err := s.domainWatcher.Add(r.Context(), req.Target, req.IntervalSeconds)
+		if err != nil {
+			s.jsonError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		s.jsonResponse(w, http.StatusCreated, item)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *Server) handleWatcherItem(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/api/watcher/")
+	parts := strings.Split(strings.Trim(path, "/"), "/")
+	if len(parts) == 0 || parts[0] == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	id := parts[0]
+	if len(parts) == 2 && parts[1] == "check" && r.Method == http.MethodPost {
+		updated, err := s.domainWatcher.Check(r.Context(), id)
+		if err != nil {
+			s.jsonError(w, http.StatusNotFound, err.Error())
+			return
+		}
+		s.jsonResponse(w, http.StatusOK, updated)
+		return
+	}
+
+	if r.Method == http.MethodDelete {
+		ok := s.domainWatcher.Remove(id)
+		s.jsonResponse(w, http.StatusOK, jsonMap{"success": ok, "id": id})
+		return
+	}
+
+	http.NotFound(w, r)
+}
+
+func (s *Server) handleACMEStatus(w http.ResponseWriter, r *http.Request) {
+	status := s.acmeServer.GetStatus()
+	s.jsonResponse(w, http.StatusOK, status)
+}
+

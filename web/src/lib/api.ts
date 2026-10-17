@@ -58,6 +58,26 @@ export interface TimingStage {
   description: string;
 }
 
+export interface LintFinding {
+  code: string;
+  severity: 'error' | 'warning' | 'info';
+  title: string;
+  message: string;
+  standard: string;
+  remediation: string;
+}
+
+export interface LintResult {
+  subject: string;
+  commonName: string;
+  isCA: boolean;
+  status: 'pass' | 'warning' | 'fail';
+  errorCount: number;
+  warningCount: number;
+  infoCount: number;
+  findings: LintFinding[];
+}
+
 export interface CertSummary {
   commonName: string;
   subject: string;
@@ -79,6 +99,7 @@ export interface CertSummary {
   extKeyUsage?: string[];
   ocspServers?: string[];
   crlDistribution?: string[];
+  lint?: LintResult;
 }
 
 export interface CipherInfo {
@@ -352,3 +373,208 @@ export function connectWebSocket(onMessage: (msg: { type: string; payload: any }
     if (ws) ws.close();
   };
 }
+
+// ---------------- Expanded Features API ----------------
+
+export interface FieldDiff {
+  field: string;
+  valueA: string;
+  valueB: string;
+  isDifferent: boolean;
+  significance: 'match' | 'info' | 'warning' | 'divergence';
+}
+
+export interface DiffResult {
+  targetA: string;
+  targetB: string;
+  probeA: ProbeResult;
+  probeB: ProbeResult;
+  hierarchyA?: ChainHierarchy;
+  hierarchyB?: ChainHierarchy;
+  latencyDiffMs: number;
+  fasterTarget: 'A' | 'B' | 'equal';
+  totalDiffCount: number;
+  protocolMatch: boolean;
+  cipherMatch: boolean;
+  alpnMatch: boolean;
+  issuerMatch: boolean;
+  differences: FieldDiff[];
+}
+
+export async function runDiff(targetA: string, targetB: string): Promise<DiffResult> {
+  const res = await fetch(`${API_BASE}/diff`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ targetA, targetB }),
+  });
+  return res.json();
+}
+
+export interface ClientProfile {
+  id: string;
+  name: string;
+  category: 'Browser' | 'Mobile' | 'Enterprise' | 'CLI';
+  description: string;
+  minVersion: number;
+  maxVersion: number;
+  ciphers: number[];
+  alpn: string[];
+}
+
+export interface ClientProbeResult {
+  profile: ClientProfile;
+  success: boolean;
+  negotiatedProtocol: string;
+  negotiatedCipher: string;
+  isPfs: boolean;
+  alpn: string;
+  latencyMs: number;
+  error?: string;
+}
+
+export interface MatrixReport {
+  target: string;
+  host: string;
+  port: string;
+  timestamp: string;
+  totalProfiles: number;
+  successfulProfiles: number;
+  failedProfiles: number;
+  results: ClientProbeResult[];
+}
+
+export async function runMatrix(target: string): Promise<MatrixReport> {
+  const res = await fetch(`${API_BASE}/matrix`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ target }),
+  });
+  return res.json();
+}
+
+export async function runLinter(params: { target?: string; pemData?: string }): Promise<LintResult> {
+  const res = await fetch(`${API_BASE}/linter`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  return res.json();
+}
+
+export interface ManifestBundle {
+  tlsSecret: string;
+  caConfigMap: string;
+  certManagerIssuer: string;
+  ingress: string;
+  allInOne: string;
+  kubectlCommand: string;
+}
+
+export async function generateK8s(params: {
+  name?: string;
+  namespace?: string;
+  certPem?: string;
+  keyPem?: string;
+  caPem?: string;
+  domains?: string[];
+  serviceName?: string;
+  servicePort?: number;
+}): Promise<ManifestBundle> {
+  const res = await fetch(`${API_BASE}/k8s/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  return res.json();
+}
+
+export interface SimulationProbeResult {
+  alertCode: number;
+  alertName: string;
+  clientError: string;
+  detectedAlert: number;
+  diagnostics: DiagnosticReport;
+  rawHex: string;
+}
+
+export async function simulateMTLSAlert(alertCode: number): Promise<SimulationProbeResult> {
+  const res = await fetch(`${API_BASE}/mtls/simulate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ alertCode }),
+  });
+  return res.json();
+}
+
+export interface MonitoredDomain {
+  id: string;
+  target: string;
+  host: string;
+  port: string;
+  intervalSeconds: number;
+  status: 'healthy' | 'expiring_soon' | 'expired' | 'unreachable';
+  commonName: string;
+  issuer: string;
+  daysRemaining: number;
+  expiresAt: string;
+  fingerprintSHA256: string;
+  tlsVersion: string;
+  cipherSuite: string;
+  latencyMs: number;
+  lastChecked: string;
+  lastError?: string;
+  addedAt: string;
+}
+
+export async function fetchWatcherDomains(): Promise<MonitoredDomain[]> {
+  const res = await fetch(`${API_BASE}/watcher`);
+  return res.json();
+}
+
+export async function addWatcherDomain(target: string, intervalSeconds: number = 300): Promise<MonitoredDomain> {
+  const res = await fetch(`${API_BASE}/watcher`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ target, intervalSeconds }),
+  });
+  return res.json();
+}
+
+export async function deleteWatcherDomain(id: string): Promise<{ success: boolean; id: string }> {
+  const res = await fetch(`${API_BASE}/watcher/${id}`, {
+    method: 'DELETE',
+  });
+  return res.json();
+}
+
+export async function checkWatcherDomain(id: string): Promise<MonitoredDomain> {
+  const res = await fetch(`${API_BASE}/watcher/${id}/check`, {
+    method: 'POST',
+  });
+  return res.json();
+}
+
+export interface AcmeOrder {
+  id: string;
+  status: string;
+  expires: string;
+  identifiers: { type: string; value: string }[];
+  finalize: string;
+  certificate?: string;
+  createdAt: string;
+  domains: string[];
+}
+
+export interface AcmeStatusReport {
+  directoryUrl: string;
+  totalAccounts: number;
+  totalOrders: number;
+  totalCertificates: number;
+  recentOrders: AcmeOrder[];
+}
+
+export async function fetchAcmeStatus(): Promise<AcmeStatusReport> {
+  const res = await fetch(`${API_BASE}/acme/status`);
+  return res.json();
+}
+

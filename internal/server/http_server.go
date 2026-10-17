@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"io/fs"
 	"net"
@@ -12,8 +13,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/alexandrmotologa/tlslens/internal/acme"
 	"github.com/alexandrmotologa/tlslens/internal/ca"
 	"github.com/alexandrmotologa/tlslens/internal/mtls"
+	"github.com/alexandrmotologa/tlslens/internal/watcher"
 )
 
 // ServerOptions configures the TLSLens API and web server.
@@ -27,15 +30,17 @@ type ServerOptions struct {
 
 // Server holds the HTTP server state and subsystems.
 type Server struct {
-	mu           sync.RWMutex
-	opts         ServerOptions
-	caInstance   *ca.CA
-	mockServer   *mtls.MockServer
-	wsHub        *Hub
-	caStorageDir string
-	listener     net.Listener
-	httpServer   *http.Server
-	actualPort   int
+	mu            sync.RWMutex
+	opts          ServerOptions
+	caInstance    *ca.CA
+	mockServer    *mtls.MockServer
+	wsHub         *Hub
+	caStorageDir  string
+	domainWatcher *watcher.DomainWatcher
+	acmeServer    *acme.Server
+	listener      net.Listener
+	httpServer    *http.Server
+	actualPort    int
 }
 
 // NewServer initializes the server with loaded or default CA.
@@ -63,11 +68,28 @@ func NewServer(opts ServerOptions) (*Server, error) {
 	hub := NewHub()
 	go hub.Run()
 
+	var rootPool *x509.CertPool
+	if caInst != nil {
+		rootPool = x509.NewCertPool()
+		rootPool.AddCert(caInst.Certificate)
+	}
+
+	dmWatcher := watcher.NewDomainWatcher(rootPool, func(domain watcher.MonitoredDomain, changeType string) {
+		hub.Broadcast("watcher_alert", map[string]any{
+			"domain":     domain,
+			"changeType": changeType,
+		})
+	})
+
+	acmeSrv := acme.NewServer(fmt.Sprintf("http://localhost:%d/acme", opts.Port), caInst)
+
 	s := &Server{
-		opts:         opts,
-		caInstance:   caInst,
-		wsHub:        hub,
-		caStorageDir: opts.StorageDir,
+		opts:          opts,
+		caInstance:    caInst,
+		wsHub:         hub,
+		caStorageDir:  opts.StorageDir,
+		domainWatcher: dmWatcher,
+		acmeServer:    acmeSrv,
 	}
 
 	return s, nil
@@ -84,9 +106,11 @@ func (s *Server) Start() error {
 	s.listener = listener
 	s.actualPort = listener.Addr().(*net.TCPAddr).Port
 
+	s.acmeServer.SetBaseURL(fmt.Sprintf("http://localhost:%d/acme", s.actualPort))
+
 	mux := http.NewServeMux()
 
-	// API Endpoints
+	// Core API Endpoints
 	mux.HandleFunc("/api/ca/status", s.handleCAStatus)
 	mux.HandleFunc("/api/ca/init", s.handleCAInit)
 	mux.HandleFunc("/api/ca/trust", s.handleCATrust)
@@ -101,6 +125,22 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/mtls/test", s.handleMTLSTest)
 	mux.HandleFunc("/api/audit", s.handleAudit)
 	mux.HandleFunc("/api/configs", s.handleConfigs)
+
+	// New Expanded API Endpoints
+	mux.HandleFunc("/api/diff", s.handleDiff)
+	mux.HandleFunc("/api/matrix", s.handleMatrix)
+	mux.HandleFunc("/api/linter", s.handleLinter)
+	mux.HandleFunc("/api/k8s/generate", s.handleK8sGenerate)
+	mux.HandleFunc("/api/mtls/simulate", s.handleMTLSSimulate)
+	mux.HandleFunc("/api/watcher", s.handleWatcher)
+	mux.HandleFunc("/api/watcher/", s.handleWatcherItem)
+	mux.HandleFunc("/api/acme/status", s.handleACMEStatus)
+
+	// Register RFC 8555 ACME Directory Routes
+	s.acmeServer.RegisterRoutes(mux)
+
+	// Start Domain Watcher background loop
+	s.domainWatcher.Start(context.Background())
 
 	// WebSocket stream
 	mux.HandleFunc("/ws/events", s.wsHub.HandleWebSocket)
@@ -129,6 +169,9 @@ func (s *Server) Stop(ctx context.Context) error {
 	s.mu.Lock()
 	if s.mockServer != nil {
 		_ = s.mockServer.Stop()
+	}
+	if s.domainWatcher != nil {
+		s.domainWatcher.Stop()
 	}
 	s.mu.Unlock()
 

@@ -10,7 +10,11 @@ import {
   FileCode, 
   CheckCircle2, 
   Loader2,
-  RefreshCw
+  RefreshCw,
+  GitCompare,
+  Layers,
+  Bell,
+  Network
 } from 'lucide-react';
 import { CACredentialsInfo, trustCA, untrustCA } from '../lib/api';
 
@@ -58,10 +62,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   const navItems = [
     { id: 'ca', label: 'CA Studio', icon: Shield },
     { id: 'handshake', label: 'Handshake Waterfall', icon: Activity },
-    { id: 'chain', label: 'Certificate Chain', icon: GitBranch },
-    { id: 'mtls', label: 'mTLS Playground', icon: Lock },
+    { id: 'chain', label: 'Chain & Linter', icon: GitBranch },
+    { id: 'diff', label: 'TLS Diff', icon: GitCompare },
+    { id: 'matrix', label: 'Client Matrix', icon: Layers },
+    { id: 'mtls', label: 'mTLS & Alerts', icon: Lock },
     { id: 'audit', label: 'Security Audit', icon: Terminal },
-    { id: 'configs', label: 'Config Studio', icon: FileCode },
+    { id: 'configs', label: 'Configs & K8s', icon: FileCode },
+    { id: 'watcher', label: 'Domain Watcher', icon: Bell },
+    { id: 'acme', label: 'ACME Server', icon: Network },
   ];
 
   return (
