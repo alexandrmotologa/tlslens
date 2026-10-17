@@ -1,0 +1,45 @@
+# Binaries
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+tlslens
+
+# Test artifacts and coverage
+*.out
+*.test
+coverage.txt
+
+# Go build cache
+.cache/
+
+# Node and Vite
+web/node_modules/
+web/dist/
+web/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment and IDE
+.env
+.env.local
+.vscode/
+.idea/
+
+# Local certificates generated during testing
+certs/
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+!web/src/**
