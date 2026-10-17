@@ -148,7 +148,18 @@ async function run() {
 
   // 5. Capture sequence of frames for animated demo GIF
   console.log('Recording frames for tlslens_demo.gif...');
-  const tabs = ['CA Studio', 'Handshake Waterfall', 'Certificate Chain', 'mTLS Playground', 'Security Audit', 'Config Studio'];
+  const tabs = [
+    'CA Studio',
+    'Handshake Waterfall',
+    'Certificate Chain',
+    'TLS Diff',
+    'Client Matrix',
+    'mTLS Playground',
+    'Security Audit',
+    'Configs & K8s',
+    'Domain Watcher',
+    'ACME Server'
+  ];
   let frameIdx = 0;
 
   for (const tabName of tabs) {
