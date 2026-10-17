@@ -70,7 +70,7 @@ data:
 	// 2. CA Bundle ConfigMap
 	caContent := string(opts.CAPEM)
 	if caContent == "" {
-		caContent = "# CA PEM placeholder\n"
+		caContent = "# CA Certificate PEM (populate from local CA or cert-manager)\n"
 	}
 	indentedCA := indent(strings.TrimSpace(caContent), "    ")
 

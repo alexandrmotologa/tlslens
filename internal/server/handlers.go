@@ -658,6 +658,18 @@ func (s *Server) handleK8sGenerate(w http.ResponseWriter, r *http.Request) {
 	if len(opts.CAPEM) == 0 && caInst != nil {
 		opts.CAPEM = caInst.CertPEM
 	}
+	if len(opts.CertPEM) == 0 && caInst != nil && len(opts.Domains) > 0 {
+		leaf, err := caInst.Issue(ca.IssueRequest{
+			CommonName:   opts.Domains[0],
+			Domains:      opts.Domains,
+			ValidityDays: 365,
+			KeyType:      "ecdsa",
+		})
+		if err == nil && leaf != nil {
+			opts.CertPEM = leaf.CertPEM
+			opts.KeyPEM = leaf.KeyPEM
+		}
+	}
 
 	bundle := k8s.GenerateManifests(opts)
 	s.jsonResponse(w, http.StatusOK, bundle)
