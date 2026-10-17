@@ -153,7 +153,7 @@ spec:
       {/* Client Configuration Studio Tabs */}
       <div className="rounded-xl border border-[#1e293b] bg-[#0b101b] overflow-hidden">
         <div className="p-3 bg-[#11192e] border-b border-[#1e293b] flex flex-wrap items-center justify-between gap-2">
-          <div className="flex space-x-1">
+          <div className="flex flex-wrap gap-1.5">
             {(['caddy', 'traefik', 'certbot', 'certmanager'] as const).map((client) => (
               <button
                 key={client}

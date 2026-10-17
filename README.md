@@ -1,7 +1,11 @@
-# TLSLens
+<p align="center">
+  <img src="docs/images/logo.png?raw=true" alt="TLSLens Logo" width="130" style="border-radius: 24px;" />
+</p>
+
+<h1 align="center">TLSLens</h1>
 
 <p align="center">
-  <strong>Local Certificate Authority, mTLS Playground, and TLS Handshake Inspector with PKI Visualizer</strong>
+  <strong>Local Certificate Authority, RFC 8555 ACME Server, mTLS Alert Diagnostics &amp; TLS Handshake Inspector</strong>
 </p>
 
 <p align="center">

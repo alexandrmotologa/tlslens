@@ -99,7 +99,7 @@ export const ClientMatrix: React.FC = () => {
         </div>
 
         {/* Quick Presets */}
-        <div className="flex items-center space-x-2 text-xs font-mono text-slate-400 pt-1 border-t border-[#1e293b]/60">
+        <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-slate-400 pt-1 border-t border-[#1e293b]/60">
           <span>Target Presets:</span>
           {['cloudflare.com:443', 'github.com:443', '127.0.0.1:9443'].map((p) => (
             <button
@@ -167,7 +167,7 @@ export const ClientMatrix: React.FC = () => {
           </div>
 
           {/* Category Filter Pills */}
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-mono text-slate-400">Filter by Category:</span>
             {categories.map((cat) => (
               <button

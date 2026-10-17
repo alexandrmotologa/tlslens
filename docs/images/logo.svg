@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <clipPath id="squircle-clip">
+      <rect x="24" y="24" width="976" height="976" rx="220" />
+    </clipPath>
+
+    <linearGradient id="cyan-lens" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f5ff"/>
+      <stop offset="50%" stop-color="#00b4d8"/>
+      <stop offset="100%" stop-color="#0077b6"/>
+    </linearGradient>
+
+    <linearGradient id="gold-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+
+    <linearGradient id="slate-light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+
+    <linearGradient id="slate-mid" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+
+    <linearGradient id="slate-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <linearGradient id="slate-deep" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#070a12"/>
+    </linearGradient>
+
+    <filter id="subtle-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000000" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <!-- Luxury White Squircle Container -->
+  <rect x="24" y="24" width="976" height="976" rx="220" fill="#ffffff" stroke="#e2e8f0" stroke-width="6" />
+
+  <g clip-path="url(#squircle-clip)">
+    <g transform="translate(512, 512)" filter="url(#subtle-shadow)">
+
+      <!-- Hexagonal Architectural Gateway -->
+      <polygon points="
+        0,-390
+        338,-195
+        338,195
+        0,390
+        -338,195
+        -338,-195
+      " fill="none" stroke="#0f172a" stroke-width="40" stroke-linejoin="round" />
+
+      <polygon points="
+        0,-355
+        307,-177
+        307,177
+        0,355
+        -307,177
+        -307,-177
+      " fill="none" stroke="#00f5ff" stroke-width="4" opacity="0.4" stroke-dasharray="16, 12" />
+
+      <!-- Watertight Base Silhouette -->
+      <path d="
+        M 0,-190
+        L 60,-220 L 160,-355 L 170,-280 L 235,-190 L 255,-80 L 270,85 L 210,230 L 130,310 L 0,350
+        L -130,310 L -210,230 L -270,85 L -255,-80 L -235,-190 L -170,-280 L -160,-355 L -60,-220
+        Z
+      " fill="#070a12" />
+
+      <!-- Sharp Horned Ear Tufts (Low-poly facets) -->
+      <!-- Left Ear Horn -->
+      <polygon points="-60,-220 -160,-355 -170,-280 -105,-190" fill="url(#slate-mid)" />
+      <polygon points="-170,-280 -160,-355 -235,-190 -160,-170" fill="url(#slate-dark)" />
+      <polygon points="-160,-170 -105,-190 -70,-150" fill="url(#slate-deep)" />
+      <!-- Right Ear Horn -->
+      <polygon points="60,-220 160,-355 170,-280 105,-190" fill="url(#slate-light)" />
+      <polygon points="170,-280 160,-355 235,-190 160,-170" fill="url(#slate-mid)" />
+      <polygon points="160,-170 105,-190 70,-150" fill="url(#slate-dark)" />
+
+      <!-- Forehead & Crown Center V-Spur -->
+      <polygon points="0,-190 -60,-220 -105,-190 0,-150" fill="url(#slate-dark)" />
+      <polygon points="0,-190 60,-220 105,-190 0,-150" fill="url(#slate-mid)" />
+      <polygon points="0,-150 -105,-190 -70,-110 0,-85" fill="url(#slate-deep)" />
+      <polygon points="0,-150 105,-190 70,-110 0,-85" fill="url(#slate-dark)" />
+
+      <!-- Outer Shoulders & Wing Mantle -->
+      <!-- Left Mantle -->
+      <polygon points="-235,-190 -160,-170 -255,-80" fill="url(#slate-deep)" />
+      <polygon points="-160,-170 -255,-80 -270,85 -180,50" fill="url(#slate-dark)" />
+      <polygon points="-270,85 -210,230 -140,180 -180,50" fill="url(#slate-mid)" />
+      <!-- Right Mantle -->
+      <polygon points="235,-190 160,-170 255,-80" fill="url(#slate-dark)" />
+      <polygon points="160,-170 255,-80 270,85 180,50" fill="url(#slate-mid)" />
+      <polygon points="270,85 210,230 140,180 180,50" fill="url(#slate-light)" />
+
+      <!-- Facial Disc Cheeks -->
+      <polygon points="-160,-170 -70,-110 -130,-45 -200,-70" fill="url(#slate-mid)" />
+      <polygon points="-200,-70 -130,-45 -120,40 -180,50" fill="url(#slate-dark)" />
+      <polygon points="160,-170 70,-110 130,-45 200,-70" fill="url(#slate-light)" />
+      <polygon points="200,-70 130,-45 120,40 180,50" fill="url(#slate-mid)" />
+
+      <!-- Alert Predatory Almond Eyes (Tilted Upward Toward Ear Tufts) -->
+      <!-- Left Eye Socket -->
+      <polygon points="-70,-110 -135,-125 -150,-70 -115,-40 -50,-55 -30,-80" fill="#050811" stroke="#00f5ff" stroke-width="2.5" stroke-linejoin="round" />
+      <!-- Left Iris (Faceted Almond with Cyan Glow) -->
+      <polygon points="-65,-100 -125,-110 -135,-75 -105,-55 -45,-65" fill="url(#cyan-lens)" />
+      <!-- Left Pupil (Sharp Dark Slit with Predatory Cant) -->
+      <polygon points="-88,-105 -100,-78 -85,-65 -76,-85" fill="#020b18" />
+      <polygon points="-84,-100 -74,-82 -80,-80" fill="#ffffff" opacity="0.95" />
+      <circle cx="-110" cy="-75" r="3" fill="#00f5ff" />
+
+      <!-- Right Eye Socket -->
+      <polygon points="70,-110 135,-125 150,-70 115,-40 50,-55 30,-80" fill="#050811" stroke="#00f5ff" stroke-width="2.5" stroke-linejoin="round" />
+      <!-- Right Iris (Faceted Almond with Cyan Glow) -->
+      <polygon points="65,-100 125,-110 135,-75 105,-55 45,-65" fill="url(#cyan-lens)" />
+      <!-- Right Pupil (Sharp Dark Slit with Predatory Cant) -->
+      <polygon points="88,-105 100,-78 85,-65 76,-85" fill="#020b18" />
+      <polygon points="84,-100 74,-82 80,-80" fill="#ffffff" opacity="0.95" />
+      <circle cx="110" cy="-75" r="3" fill="#00f5ff" />
+
+      <!-- Brow Armor Over Eyes (Intense Gaze Protection) -->
+      <polygon points="0,-85 -30,-80 -70,-110 -25,-100" fill="url(#slate-light)" />
+      <polygon points="0,-85 30,-80 70,-110 25,-100" fill="#64748b" />
+
+      <!-- Central Beak & Keel (Titanium Slate + Amber Gold Tip) -->
+      <polygon points="0,-85 -25,-45 0,-25" fill="#64748b" />
+      <polygon points="0,-85 25,-45 0,-25" fill="#94a3b8" />
+      <polygon points="0,-25 -20,-20 0,45" fill="url(#gold-accent)" />
+      <polygon points="0,-25 20,-20 0,45" fill="#fbbf24" />
+      <polygon points="0,45 -12,20 0,75" fill="#d97706" />
+      <polygon points="0,45 12,20 0,75" fill="url(#gold-accent)" />
+
+      <!-- Chin / Throat Plates -->
+      <polygon points="0,75 -60,45 -120,40 -65,115 0,120" fill="url(#slate-dark)" />
+      <polygon points="0,75 60,45 120,40 65,115 0,120" fill="url(#slate-mid)" />
+
+      <!-- Chest Shield / PKI Core Plate -->
+      <polygon points="0,120 -65,115 -115,190 0,235" fill="url(#slate-deep)" />
+      <polygon points="0,120 65,115 115,190 0,235" fill="url(#slate-dark)" />
+
+      <!-- Cybernetic / Cryptographic Central Node (Keyhole Prism) -->
+      <polygon points="0,140 28,160 18,195 -18,195 -28,160" fill="#050c18" stroke="#00f5ff" stroke-width="3" stroke-linejoin="round" />
+      <circle cx="0" cy="167" r="7" fill="url(#cyan-lens)" />
+
+      <!-- Lower Wings & Tail Keel -->
+      <!-- Left Lower Wing -->
+      <polygon points="-210,230 -140,180 -115,190 -130,310" fill="url(#slate-dark)" />
+      <polygon points="-130,310 -115,190 0,235 0,350" fill="url(#slate-deep)" />
+      <!-- Right Lower Wing -->
+      <polygon points="210,230 140,180 115,190 130,310" fill="url(#slate-mid)" />
+      <polygon points="130,310 115,190 0,235 0,350" fill="url(#slate-dark)" />
+
+      <!-- Golden Trust Accents on Shoulder Trim -->
+      <polygon points="-160,-170 -235,-190 -230,-182 -156,-162" fill="url(#gold-accent)" />
+      <polygon points="160,-170 235,-190 230,-182 156,-162" fill="url(#gold-accent)" />
+
+    </g>
+  </g>
+</svg>

@@ -214,7 +214,7 @@ export const ConfigGenerator: React.FC = () => {
               </div>
 
               {k8sBundle && (
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => handleCopy('k8s-cmd', k8sBundle.kubectlCommand)}
                     className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono rounded border border-slate-700 transition"

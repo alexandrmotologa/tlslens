@@ -69,9 +69,9 @@ export function App() {
 
       {/* Real-time Event Notification Toast */}
       {liveBanner && (
-        <div className="fixed bottom-4 right-4 z-50 bg-[#11192e] border border-blue-500/50 text-blue-300 px-4 py-2 rounded-lg text-xs font-mono shadow-xl flex items-center space-x-2 animate-bounce">
-          <Info className="w-4 h-4 text-blue-400" />
-          <span>{liveBanner}</span>
+        <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:max-w-md z-50 bg-[#11192e] border border-blue-500/50 text-blue-300 px-4 py-2.5 rounded-lg text-xs font-mono shadow-xl flex items-center space-x-2">
+          <Info className="w-4 h-4 text-blue-400 shrink-0" />
+          <span className="truncate">{liveBanner}</span>
         </div>
       )}
 

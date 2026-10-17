@@ -231,7 +231,7 @@ export const DomainWatcher: React.FC = () => {
               </div>
 
               {/* Status Pill */}
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>{getStatusBadge(d.status, d.daysRemaining)}</div>
                 <div className="text-[11px] font-mono text-slate-400">
                   {d.latencyMs > 0 && `${d.latencyMs.toFixed(1)} ms`}
@@ -266,7 +266,7 @@ export const DomainWatcher: React.FC = () => {
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 pt-1">
+              <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] font-mono text-slate-500 pt-1">
                 <span>Check: Every {d.intervalSeconds / 60}m</span>
                 <span>
                   Last checked: {d.lastChecked ? new Date(d.lastChecked).toLocaleTimeString() : 'Never'}
