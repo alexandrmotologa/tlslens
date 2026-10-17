@@ -136,43 +136,43 @@ tlslens/
 ## 3. Detailed Implementation Roadmap
 
 ### Phase 1: Core PKI Engine and Local Trust Store Automation
-- [ ] Task 1.1: Go module setup (`github.com/alexandrmotologa/tlslens`) with Go 1.23 compatibility.
-- [ ] Task 1.2: Root CA generation in `internal/ca/ca.go`:
+- [x] Task 1.1: Go module setup (`github.com/alexandrmotologa/tlslens`) with Go 1.23 compatibility.
+- [x] Task 1.2: Root CA generation in `internal/ca/ca.go`:
   - ECDSA P-256 (default), Ed25519, and RSA 2048/4096 key support.
   - Proper X.509 v3 fields: `IsCA: true`, `BasicConstraintsValid: true`, `KeyUsage: KeyUsageCertSign | KeyUsageCRLSign`.
   - Serial number generation with cryptographically secure random integers.
   - PEM encoding for certificate and private key with automatic storage in standard path.
-- [ ] Task 1.3: Leaf certificate issuer in `internal/ca/cert_issuer.go`:
+- [x] Task 1.3: Leaf certificate issuer in `internal/ca/cert_issuer.go`:
   - Configurable SANs (DNS names, IPv4, IPv6).
   - Configurable validity periods (1 day to 365 days).
   - Appropriate key usage: `KeyUsageDigitalSignature | KeyUsageKeyEncipherment`, `ExtKeyUsageServerAuth`, `ExtKeyUsageClientAuth`.
   - Export to PEM, PKCS#12 (.p12) with password protection, and combined bundles.
-- [ ] Task 1.4: Cross-platform OS trust store installer:
+- [x] Task 1.4: Cross-platform OS trust store installer:
   - Windows (`internal/ca/truststore_windows.go`): `certutil.exe -addstore -f "ROOT"` and `-delstore "ROOT"`, plus verification query.
   - macOS (`internal/ca/truststore_darwin.go`): `security add-trusted-cert` and `security remove-trusted-cert`.
   - Linux (`internal/ca/truststore_linux.go`): `/usr/local/share/ca-certificates/` and `/etc/pki/ca-trust/source/anchors/` with `update-ca-certificates` or `update-ca-trust`.
   - Trust store status detector returning whether the root certificate is currently trusted by the OS.
 
 ### Phase 2: TLS Handshake Profiler and X.509 Chain Inspector
-- [ ] Task 2.1: TLS handshake dialer and timeline profiler in `internal/handshake/probe.go`:
+- [x] Task 2.1: TLS handshake dialer and timeline profiler in `internal/handshake/probe.go`:
   - Measure DNS resolution duration (`t_dns`).
   - Measure TCP 3-way handshake roundtrip time (`t_tcp`).
   - Measure TLS ClientHello to ServerHello latency (`t_server_hello`).
   - Measure certificate transfer and validation time (`t_cert_validation`).
   - Measure key exchange and handshake completion (`t_handshake_finish`).
   - Record TLS version (TLS 1.3, TLS 1.2), cipher suite, ALPN protocol (`h2`, `http/1.1`, `h3`), SNI, and session ticket status.
-- [ ] Task 2.2: X.509 certificate chain parser in `internal/inspector/chain_parser.go`:
+- [x] Task 2.2: X.509 certificate chain parser in `internal/inspector/chain_parser.go`:
   - Traverse full chain: Leaf -> Intermediate(s) -> Root.
   - Extract SANs (DNS, IP, URI), KeyUsage, ExtendedKeyUsage, AuthorityKeyIdentifier, SubjectKeyIdentifier.
   - Expiration calculations: NotBefore, NotAfter, days remaining, expiration status flags.
   - SHA-256 and SHA-1 fingerprints.
-- [ ] Task 2.3: Revocation inspector in `internal/inspector/revocation.go`:
+- [x] Task 2.3: Revocation inspector in `internal/inspector/revocation.go`:
   - OCSP stapling verification from handshake response.
   - Direct OCSP responder HTTP probe when URLs exist in Authority Information Access (AIA).
   - CRL distribution point parser and HTTP fetcher.
 
 ### Phase 3: Interactive mTLS Playground and Alert Diagnostics Engine
-- [ ] Task 3.1: Configurable mTLS test server in `internal/mtls/mock_server.go`:
+- [x] Task 3.1: Configurable mTLS test server in `internal/mtls/mock_server.go`:
   - In-memory TLS listener with dynamic port allocation or fixed port.
   - Configurable client authentication policy:
     - `RequireAndVerifyClientCert`
@@ -182,10 +182,10 @@ tlslens/
     - `NoClientCert`
   - Dynamic client CA certificate pool updates.
   - Connection event logger capturing client certificate details and handshake outcomes.
-- [ ] Task 3.2: Configurable mTLS client probe in `internal/mtls/test_client.go`:
+- [x] Task 3.2: Configurable mTLS client probe in `internal/mtls/test_client.go`:
   - Connects to arbitrary targets or local test server with specified client cert and key.
   - Captures exact TLS alert codes and connection errors.
-- [ ] Task 3.3: TLS alert diagnostics analyzer in `internal/mtls/diagnostics.go`:
+- [x] Task 3.3: TLS alert diagnostics analyzer in `internal/mtls/diagnostics.go`:
   - Map alert codes to root causes and concrete remediation instructions:
     - Alert 42 (`bad_certificate`): malformed certificate, signature failure, or invalid ASN.1.
     - Alert 46 (`certificate_unknown`): client certificate not signed by trusted CA.
@@ -195,23 +195,23 @@ tlslens/
     - Alert 112 (`unrecognized_name`): SNI mismatch with server configuration.
 
 ### Phase 4: Security Auditor and Configuration Snippet Studio
-- [ ] Task 4.1: Security and cipher strength auditor in `internal/audit/auditor.go`:
+- [x] Task 4.1: Security and cipher strength auditor in `internal/audit/auditor.go`:
   - Probe target endpoint for supported TLS versions and cipher suites.
   - Check for weak ciphers (CBC mode, 3DES, RC4), lack of forward secrecy (non-ECDHE), small key sizes (< 2048-bit RSA), and SHA-1 signatures.
   - Assign overall security grade (A+, A, B, C, F) with specific risk items.
-- [ ] Task 4.2: Reverse proxy and runtime config generator in `internal/configs/generator.go`:
+- [x] Task 4.2: Reverse proxy and runtime config generator in `internal/configs/generator.go`:
   - Produce validated configuration blocks for Nginx, Caddy, Envoy, Apache, Docker Compose, cURL commands, Go `tls.Config`, Node.js `https.createServer`, and Python `ssl.SSLContext`.
   - Include environment variables for local trust (`NODE_EXTRA_CA_CERTS`, `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`).
 
 ### Phase 5: REST API, WebSocket Stream, and CLI Engine
-- [ ] Task 5.1: REST API server in `internal/server/`:
+- [x] Task 5.1: REST API server in `internal/server/`:
   - `/api/ca/status`, `/api/ca/init`, `/api/ca/trust`, `/api/ca/untrust`, `/api/ca/issue`
   - `/api/probe` (handshake timeline, chain details, OCSP)
   - `/api/mtls/server/start`, `/api/mtls/server/stop`, `/api/mtls/server/status`, `/api/mtls/test`
   - `/api/audit`
   - `/api/configs`
   - `/ws/events` live event streaming for probes and mTLS events.
-- [ ] Task 5.2: CLI commands in `cmd/tlslens/main.go`:
+- [x] Task 5.2: CLI commands in `cmd/tlslens/main.go`:
   - `tlslens serve [--port 8080] [--dev]`
   - `tlslens ca init [--key-type ecdsa|rsa]`
   - `tlslens ca trust` / `tlslens ca untrust`
@@ -221,46 +221,46 @@ tlslens/
   - `tlslens audit <host:port>`
 
 ### Phase 6: Embedded React 19 Web Studio
-- [ ] Task 6.1: React 19 + TypeScript + Vite + Tailwind CSS scaffolding with Cerulean design kit tokens (near-black background, steel-blue accents, monospace telemetry typography).
-- [ ] Task 6.2: App shell and header with live OS trust status badge, quick actions, and tab navigation.
-- [ ] Task 6.3: CA Manager tab:
+- [x] Task 6.1: React 19 + TypeScript + Vite + Tailwind CSS scaffolding with Cerulean design kit tokens (near-black background, steel-blue accents, monospace telemetry typography).
+- [x] Task 6.2: App shell and header with live OS trust status badge, quick actions, and tab navigation.
+- [x] Task 6.3: CA Manager tab:
   - 1-click root CA generation with key type selector.
   - OS trust installation and removal button with status indicator.
   - Leaf certificate issuance form with live DNS/IP tag inputs.
   - Download buttons for PEM, Key, and PKCS#12 (.p12).
-- [ ] Task 6.4: Handshake Profiler tab:
+- [x] Task 6.4: Handshake Profiler tab:
   - Target input field (`host:port`) with preset chips (`google.com:443`, `cloudflare.com:443`, `localhost:9443`).
   - Interactive Gantt waterfall chart visualizing TCP connect, TLS ClientHello, ServerHello, Certificate Validation, and Key Exchange.
   - Summary metrics: total handshake time, TLS version, cipher suite, ALPN, session resumption.
-- [ ] Task 6.5: Certificate Chain Inspector tab:
+- [x] Task 6.5: Certificate Chain Inspector tab:
   - Hierarchical visual tree displaying Leaf -> Intermediate -> Root.
   - Node inspection card showing Subject, Issuer, Validity countdown, SAN list, Key Usage flags, and SHA-256 fingerprint.
   - Real-time OCSP and CRL status pill.
-- [ ] Task 6.6: mTLS Playground tab:
+- [x] Task 6.6: mTLS Playground tab:
   - In-browser test server controls (toggle server, set client auth policy, select trusted CA).
   - Client probe executor with custom certificate / key upload or 1-click selection from issued certs.
   - Real-time handshake log with TLS alert decoding, root cause analysis, and remediation cards.
-- [ ] Task 6.7: Security Audit tab:
+- [x] Task 6.7: Security Audit tab:
   - Security grade badge (A+ to F), protocol matrix, cipher scorecard, and vulnerability notices.
-- [ ] Task 6.8: Config Generator tab:
+- [x] Task 6.8: Config Generator tab:
   - Filterable tabs for Nginx, Caddy, Envoy, cURL, Docker, Go, Node.js, and Python.
   - 1-click copy with instant visual confirmation.
 
 ### Phase 7: Verification Suite, Visual Assets, and Release
-- [ ] Task 7.1: Go unit and integration tests:
+- [x] Task 7.1: Go unit and integration tests:
   - CA generation, SAN issuance, and key encoding tests.
   - Trust store installer mocking and status checks.
   - Handshake probe timing verification.
   - mTLS failure scenarios (expired cert, unknown CA, mismatched key).
-- [ ] Task 7.2: Single-binary embedding:
+- [x] Task 7.2: Single-binary embedding:
   - Build web assets with Vite.
   - Embed assets in Go binary using `//go:embed`.
   - Verify standalone binary runs without Node.js or external dependencies.
-- [ ] Task 7.3: Visual documentation and demo generation:
+- [x] Task 7.3: Visual documentation and demo generation:
   - Capture real UI screenshots of all tabs.
   - Record animated demo GIF (`docs/images/tlslens_demo.gif`).
   - Write humanized `README.md` embedding demo GIF and screenshots.
-- [ ] Task 7.4: Portfolio sync Phase 2:
+- [x] Task 7.4: Portfolio sync Phase 2:
   - Copy screenshots and demo GIF to `mtlg-site` and `mtlglabs-space`.
   - Update `projects.json` with LIVE badges, finalized humanized copy, and image lists.
   - Run sync scripts, commit, and push.

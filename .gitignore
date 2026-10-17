@@ -18,7 +18,6 @@ coverage.txt
 
 # Node and Vite
 web/node_modules/
-web/dist/
 web/.vite/
 npm-debug.log*
 yarn-debug.log*
